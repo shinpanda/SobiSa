@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { NavigatorShareIcon } from '@/assets/SocialIcons';
 import { ImageButton } from '@/components/common/buttons';
@@ -11,7 +11,7 @@ const NativeShareButton = ({ sharedMessage }: NativeShareButtonProps) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!(navigator.share === undefined || navigator.canShare(sharedMessage) === false)) {
+    if (navigator.share !== undefined) {
       setShow(true);
     }
   }, [sharedMessage]);

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { toSvg } from 'html-to-image';
 import { useRouter } from 'next/router';
@@ -8,7 +8,6 @@ import { DownloadIcon } from '@/assets/Icons';
 import Portal from '@/components/Portal';
 import { Background, ModalContainer } from '@/components/common/Modal';
 import { CloseButton, ShareButton } from '@/components/common/buttons';
-import Card from '@/components/event/Card';
 import Certificate from '@/components/results/Certificate';
 import ShareButtons from '@/components/results/ShareButtons';
 import useModalAnimation from '@/hooks/useModalAnimation';
@@ -20,10 +19,7 @@ interface CertificateAndShareModalProps {
 const createImage = async (url: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () =>
-      setTimeout(() => {
-        resolve(img);
-      }, 200);
+    img.onload = () => resolve(img);
     img.decode = async () => resolve(img);
     img.onerror = reject;
     img.crossOrigin = 'anonymous';
@@ -65,20 +61,25 @@ const toPng = async (node: HTMLDivElement) => {
 
 const CertificateAndShareModal = ({ onClose }: CertificateAndShareModalProps) => {
   const { show, animationAfterClose } = useModalAnimation(onClose);
+  const [imgData, setImgData] = useState<string>('');
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const certificateDownload = () => {
+  const getImgData = () => {
+    if (imgData) return imgData;
     if (ref.current === null) {
-      return;
+      return '';
     }
+    return toPng(ref.current);
+  };
 
-    toPng(ref.current).then(dataUrl => {
-      const link = document.createElement('a');
-      link.download = '임명장.png';
-      link.href = dataUrl;
-      link.click();
-    });
+  const certificateDownload = async () => {
+    const dataUrl = await getImgData();
+    const link = document.createElement('a');
+    link.download = '임명장.png';
+    link.href = dataUrl;
+    link.click();
+    setImgData(dataUrl);
   };
 
   const redirectHome = () => {
@@ -93,13 +94,12 @@ const CertificateAndShareModal = ({ onClose }: CertificateAndShareModalProps) =>
           <CertificateAndShareWrapper>
             <CloseButton style={{ alignSelf: 'flex-end' }} onClick={animationAfterClose} />
             <Certificate ref={ref} />
-            <ShareButtons />
+            <ShareButtons imgData={imgData} />
             <ModalButton onClick={certificateDownload}>
               이미지 저장하기! <DownloadIcon />
             </ModalButton>
             <ModalGrayButton onClick={redirectHome}>홈으로 돌아가기</ModalGrayButton>
           </CertificateAndShareWrapper>
-          <Card />
         </Wrapper>
       </Container>
     </Portal>
